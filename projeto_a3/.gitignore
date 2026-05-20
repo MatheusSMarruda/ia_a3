@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+
+# Outputs gerados pelo pipeline (reproduzíveis a partir do código)
+outputs/figures/
+outputs/metrics/
+outputs/models/
+outputs/logs/
+
+# Datasets intermediários (manter raw/ versionado se for pequeno)
+data/processed/
+
+# OS
+.DS_Store
+Thumbs.db
