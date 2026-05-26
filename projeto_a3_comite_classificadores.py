@@ -39,7 +39,7 @@ from sklearn.metrics import (
 )
 
 RANDOM_STATE = 42
-DATA_PATH = "sbdb_asteroides.csv"
+DATA_PATH = "projeto_a3/data/raw/sbdb_asteroides.csv"
 
 # ============================================================
 # 1) CARREGAMENTO + EDA basico
@@ -234,6 +234,31 @@ scores = cross_val_score(ensemble_soft,
                          y_bal, cv=cv, scoring="f1")
 print(f"F1 por fold : {np.round(scores, 4)}")
 print(f"F1 medio    : {scores.mean():.4f}  (+/- {scores.std():.4f})")
+
+print("\n" + "=" * 60)
+print("9) TOP 5 ASTEROIDES COM MAIOR RISCO DE COLISAO")
+print("=" * 60)
+# Ranking geometrico: dentre os PHAs (pha == 'Y'), os 5 com menor MOID
+# (Minimum Orbit Intersection Distance). Mesma metodologia documentada
+# na secao 5 do relatorio (projeto_a3/reports/Documentacao_Projeto_A3.pdf).
+# Nao usa o modelo - usa a base bruta - apenas para reportar quais
+# asteroides reais merecem maior atencao.
+AU_KM = 149_597_870.7  # 1 unidade astronomica em km
+
+top5 = (
+    df[df["pha"] == "Y"]
+    .dropna(subset=["moid"])
+    .nsmallest(5, "moid")
+    .loc[:, ["full_name", "H", "moid", "per", "e", "a", "i", "class"]]
+    .copy()
+)
+top5["moid_km"]  = (top5["moid"] * AU_KM).round(0)
+top5["per_anos"] = (top5["per"] / 365.25).round(2)
+top5["full_name"] = top5["full_name"].str.strip()
+
+print(top5[["full_name", "H", "moid", "moid_km",
+            "per_anos", "e", "a", "i", "class"]]
+      .to_string(index=False))
 
 print("\nArquivos gerados:")
 print("  - comparacao_metricas.png")
