@@ -25,52 +25,11 @@ O problema foi formulado como uma **classificação binária**:
 
 ## 🏗️ Arquitetura e Fluxo de Dados
 
-O pipeline é totalmente modular: cada responsabilidade vive em um módulo próprio dentro de `src/`, e o `main.py` apenas orquestra a ordem de execução. O fluxo completo é:
+O pipeline é totalmente modular: cada responsabilidade vive em um módulo próprio dentro de `src/`, e o `main.py` apenas orquestra a ordem de execução.
 
-```text
-sbdb_asteroides.csv
-        │
-        ▼
-┌───────────────────┐   carregamento.py
-│  1. Carregamento  │   • Leitura do CSV + EDA básico
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐   preprocessamento.py
-│ 2. Pré-process.   │   • Encoding do target (Y→1 / N→0)
-│    + Feature Eng. │   • Imputação por mediana
-└───────────────────┘   • 4 features orbitais derivadas
-        │
-        ▼
-┌───────────────────┐   balanceamento.py
-│ 3. Balanceamento  │   • Undersampling (proporção 1:3)
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐   preprocessamento.py
-│ 4. Split + Escala │   • 75% treino / 25% teste (estratificado)
-└───────────────────┘   • StandardScaler
-        │
-        ▼
-┌───────────────────┐   modelos.py
-│ 5. Classificadores│   • Treina os 6 modelos individuais
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐   ensemble.py
-│ 6. Comitê (Voting)│   • Soft Voting + Hard Voting
-│    + Threshold    │   • Threshold tuning (0.35) para recall
-└───────────────────┘
-        │
-        ▼
-┌───────────────────┐   avaliacao.py + visualizacoes.py
-│ 7. Avaliação      │   • Métricas, curvas ROC/PR, validação cruzada
-│    + Visualização │   • Exporta CSV e gráficos PNG
-└───────────────────┘
-        │
-        ▼
-   outputs/ + reports/apresentacao_a3.html
-```
+<div align="center">
+  <img src="pipeline.jpg" alt="Arquitetura e Fluxo de Dados do Projeto" width="800">
+</div>
 
 ### Etapas detalhadas
 
