@@ -185,10 +185,81 @@ for nome, y_pred in [("Comite (Soft Voting)", y_pred_soft),
                                 target_names=["Nao-Perigoso", "Perigoso"]))
 
 # ============================================================
-# 7) COMPARACAO FINAL + VISUALIZACOES
+# 7) VOTACAO DO COMITE EM ASTEROIDES INDIVIDUAIS
+# Aqui mostramos, para UM asteroide especifico, como CADA
+# classificador vota (Perigoso / Nao-Perigoso) e qual e o
+# veredito final do comite (voto majoritario). Isso deixa
+# explicito o funcionamento do ensemble, inclusive quando os
+# modelos discordam entre si (placar dividido).
 # ============================================================
 print("\n" + "=" * 60)
-print("7) RESUMO COMPARATIVO")
+print("7) VOTACAO DO COMITE EM ASTEROIDES INDIVIDUAIS")
+print("=" * 60)
+
+# Recupera o nome real de cada asteroide do conjunto de teste.
+# X_test mantem o indice de X_bal (que foi reindexado em 0..N-1),
+# entao conseguimos mapear cada linha de volta para a base original.
+nomes_bal = df.loc[keep_idx, "full_name"].reset_index(drop=True)
+nomes_teste = nomes_bal.loc[X_test.index].reset_index(drop=True)
+
+# Matriz de votos: cada modelo prediz cada asteroide do teste.
+# 1 = votou "Perigoso", 0 = votou "Nao-Perigoso".
+votos = pd.DataFrame(
+    {nome: mdl.predict(X_test_s) for nome, mdl in modelos.items()}
+)
+votos_perigoso = votos.sum(axis=1)   # quantos modelos votaram "Perigoso"
+n_modelos = len(modelos)
+
+
+def explicar_voto(pos):
+    """Imprime a votacao detalhada do comite para 1 asteroide do teste."""
+    nome = str(nomes_teste.iloc[pos]).strip()
+    real = "Perigoso" if y_test.iloc[pos] == 1 else "Nao-Perigoso"
+    print(f"\nAsteroide: {nome}")
+    print(f"  Rotulo real (NASA) : {real}")
+    print("  Votos individuais  :")
+    for modelo_nome in modelos:
+        voto = votos.iloc[pos][modelo_nome]
+        rotulo = "PERIGOSO" if voto == 1 else "nao-perigoso"
+        print(f"    - {modelo_nome:<14}: {rotulo}")
+    n_sim = int(votos_perigoso.iloc[pos])
+    n_nao = n_modelos - n_sim
+    veredito = "PERIGOSO" if n_sim > n_nao else "NAO-PERIGOSO"
+    print(f"  Placar do comite   : {n_sim} x {n_nao} "
+          f"(Perigoso x Nao-Perigoso)")
+    print(f"  >>> VEREDITO FINAL : {veredito}")
+
+
+def primeiro(arr, fallback=0):
+    """Retorna o 1o indice de um array de candidatos (ou fallback)."""
+    return int(arr[0]) if len(arr) else fallback
+
+
+# Seleciona automaticamente exemplos didaticos dentro do teste:
+# 1) asteroide que o comite classifica como PERIGOSO (e e mesmo PHA);
+# 2) asteroide que o comite classifica como NAO-PERIGOSO;
+# 3) caso em que o comite fica DIVIDIDO (votacao apertada, ex.: 3 x 2).
+cand_perigoso = np.where((votos_perigoso > n_modelos / 2) &
+                         (y_test.values == 1))[0]
+cand_seguro   = np.where((votos_perigoso < n_modelos / 2) &
+                         (y_test.values == 0))[0]
+# Com 5 classificadores, a votacao mais "apertada" possivel e 3 x 2.
+cand_dividido = np.where((votos_perigoso >= 2) & (votos_perigoso <= 3))[0]
+
+print("\n>>> EXEMPLO 1 - Comite classifica como PERIGOSO:")
+explicar_voto(primeiro(cand_perigoso))
+
+print("\n>>> EXEMPLO 2 - Comite classifica como NAO-PERIGOSO:")
+explicar_voto(primeiro(cand_seguro))
+
+print("\n>>> EXEMPLO 3 - Comite DIVIDIDO (classificadores discordam):")
+explicar_voto(primeiro(cand_dividido))
+
+# ============================================================
+# 8) COMPARACAO FINAL + VISUALIZACOES
+# ============================================================
+print("\n" + "=" * 60)
+print("8) RESUMO COMPARATIVO")
 print("=" * 60)
 
 df_metricas = pd.DataFrame(
@@ -226,7 +297,7 @@ plt.close()
 
 # 7.3 Validacao cruzada (5 folds estratificados) do melhor modelo
 print("\n" + "=" * 60)
-print("8) VALIDACAO CRUZADA (5-fold) DO COMITE SOFT")
+print("9) VALIDACAO CRUZADA (5-fold) DO COMITE SOFT")
 print("=" * 60)
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
 scores = cross_val_score(ensemble_soft,
@@ -236,7 +307,7 @@ print(f"F1 por fold : {np.round(scores, 4)}")
 print(f"F1 medio    : {scores.mean():.4f}  (+/- {scores.std():.4f})")
 
 print("\n" + "=" * 60)
-print("9) TOP 5 ASTEROIDES COM MAIOR RISCO DE COLISAO")
+print("10) TOP 5 ASTEROIDES COM MAIOR RISCO DE COLISAO")
 print("=" * 60)
 # Ranking geometrico: dentre os PHAs (pha == 'Y'), os 5 com menor MOID
 # (Minimum Orbit Intersection Distance). Mesma metodologia documentada
